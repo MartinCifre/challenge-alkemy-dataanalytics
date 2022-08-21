@@ -10,63 +10,32 @@ cines_url="https://datos.cultura.gob.ar/dataset/37305de4-3cce-4d4b-9d9a-fec3ca61
 bibliotecas_url="https://datos.cultura.gob.ar/dataset/37305de4-3cce-4d4b-9d9a-fec3ca61d09f/resource/01c6c048-dbeb-44e0-8efa-6944f73715d7/download/biblioteca_popular.csv"
 
 
-"""Descarga y almacenamiento de archivos fuente"""
+"""Descarga y almacenamiento de archivos fuente para poder procesar"""
 
-categorias=[
-    {
-    "name": "museos",
-    "url": museos_url,
-    },
-     {
-    "name": "cines",
-    "url": cines_url,
-    },
-     {
-    "name": "bibliotecas",
-    "url": bibliotecas_url,
-    },
-]
+museos = {"name": "museos", "url": museos_url}
+cines = {"name": "cines", "url": cines_url}
+bibliotecas = {"name": "bibliotecas", "url": bibliotecas_url}
 
-direccioncsv = "{categoria}/{año}-{mes:02d}/{categoria}-{dia:02d}-{mes:02d}-{año}.csv"
+def descarga(cat_dicc):
+    """descarga archivo fuente con la url, crea el directorio y lo guarda. Luego devuelve ruta de descarga.
+    Args: nombre de la fuente
 
-#museos
-categoria_dicc = categorias[0]
+    returns: ruta del archivo descargado
+    """
+    rutacsv = "{categoria}/{año}-{mes:02d}/{categoria}-{dia:02d}-{mes:02d}-{año}.csv"
+    r = requests.get(cat_dicc["url"])
+    r.encoding = "utf-8"
+    hoy = date.today()
+    ruta = Path(rutacsv.format(categoria=cat_dicc["name"] , año=hoy.year , mes=hoy.month , dia = hoy.day))
+    ruta.parent.mkdir(parents=True, exist_ok=True)
 
-r = requests.get(categoria_dicc["url"])
-r.encoding = "utf-8"
-hoy = date.today()
-dir = Path(direccioncsv.format(categoria=categoria_dicc["name"] , año=hoy.year , mes=hoy.month ,dia = hoy.day))
-dir.parent.mkdir(parents=True, exist_ok=True)
-with open (dir,"w") as f_out:
-    f_out.write(r.text) 
+    with open (ruta,"w") as f_out:
+        f_out.write(r.text) 
+    return ruta
 
-dfmuseos = pd.read_csv(dir)
-
-#cines
-categoria_dicc = categorias[1]
-
-r = requests.get(categoria_dicc["url"])
-r.encoding = "utf-8"
-hoy = date.today()
-dir = Path(direccioncsv.format(categoria=categoria_dicc["name"] , año=hoy.year , mes=hoy.month ,dia = hoy.day))
-dir.parent.mkdir(parents=True, exist_ok=True)
-with open (dir,"w") as f_out:
-    f_out.write(r.text) 
-
-dfcines = pd.read_csv(dir)
-
-#bibliotecas
-
-categoria_dicc = categorias[2]
-r = requests.get(categoria_dicc["url"])
-r.encoding = "utf-8"
-hoy = date.today()
-dir = Path(direccioncsv.format(categoria=categoria_dicc["name"] , año=hoy.year , mes=hoy.month ,dia = hoy.day))
-dir.parent.mkdir(parents=True, exist_ok=True)
-with open (dir,"w") as f_out:
-    f_out.write(r.text) 
-
-dfbibliotecas = pd.read_csv(dir)
+dfmuseos = pd.read_csv(descarga(museos))
+dfcines = pd.read_csv(descargar_arch(cines))
+dfbibliotecas = pd.read_csv(descargar_arch(bibliotecas))
 
 """Procesamiento de los datos"""
 
@@ -122,20 +91,18 @@ lst = list()
 for name, df in dfnorm.items():
   lst.append({"fuente":name , "cantidad": df.size})
 regxfuente = pd.DataFrame(lst)
-regxfuente
+
 
 #Cantidad de registros totales por categoría
 regxcat = tablanorm.groupby("categoría",as_index=False).size()
-regxcat
+
 
 #Cantidad de registros por provincia y categoría
 regxprovycat =tablanorm.groupby(["categoría","provincia"],as_index=False).size()
-regxprovycat
+
 
 #Procesar la información de cines para poder crear una tabla
 tablacines = dfcines.groupby("provincia",as_index=False).count()[["provincia","Pantallas","Butacas","espacio_INCAA"]]
-tablacines
-
 
 """Almacenamiento de los datos procesados en la base de datos"""
 

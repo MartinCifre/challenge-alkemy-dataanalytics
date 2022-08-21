@@ -34,8 +34,8 @@ def descarga(cat_dicc):
     return ruta
 
 dfmuseos = pd.read_csv(descarga(museos))
-dfcines = pd.read_csv(descargar_arch(cines))
-dfbibliotecas = pd.read_csv(descargar_arch(bibliotecas))
+dfcines = pd.read_csv(descarga(cines))
+dfbibliotecas = pd.read_csv(descarga(bibliotecas))
 
 """Procesamiento de los datos"""
 
